@@ -193,6 +193,7 @@ func (s *EthClient) headerCall(ctx context.Context, method string, id rpcBlockID
 	var header *RPCHeader
 	err := s.client.CallContext(ctx, &header, method, id.Arg(), false) // headers are just blocks without txs
 	if err != nil {
+		log.Info("eth_getBlockByHash failed", "method", method, "id", id.Arg(), "err", err)
 		return nil, err
 	}
 	if header == nil {
@@ -213,7 +214,7 @@ func (s *EthClient) blockCall(ctx context.Context, method string, id rpcBlockID)
 	var block *RPCBlock
 	err := s.client.CallContext(ctx, &block, method, id.Arg(), true)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, fmt.Errorf("failed to call %s: %w", method, err)
 	}
 	if block == nil {
 		return nil, nil, ethereum.NotFound
@@ -317,7 +318,7 @@ func (s *EthClient) PayloadByLabel(ctx context.Context, label eth.BlockLabel) (*
 func (s *EthClient) FetchReceipts(ctx context.Context, blockHash common.Hash) (eth.BlockInfo, types.Receipts, error) {
 	info, txs, err := s.InfoAndTxsByHash(ctx, blockHash)
 	if err != nil {
-		return nil, nil, fmt.Errorf("querying block: %w", err)
+		return nil, nil, fmt.Errorf("FetchReceipts querying block: %w", err)
 	}
 
 	txHashes, _ := eth.TransactionsToHashes(txs), eth.ToBlockID(info)
